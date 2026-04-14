@@ -1,22 +1,70 @@
-import { contextBridge } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge, ipcRenderer } from 'electron'
 
-// Custom APIs for renderer
-const api = {}
+export type ChatRecord = {
+  id: string
+  title: string
+  createdAt: Date
+  updatedAt: Date
+}
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
-if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', api)
-  } catch (error) {
-    console.error(error)
+export type MessageRecord = {
+  id: string
+  chatId: string
+  role: 'user' | 'assistant' | 'tool'
+  content: string
+  toolCalls: string | null
+  createdAt: Date
+}
+
+export type MemoryRecord = {
+  id: string
+  key: string
+  value: string
+  updatedAt: Date
+}
+
+const api = {
+  // Chats
+  createChat: () => ipcRenderer.invoke('chat:create') as Promise<ChatRecord>,
+  listChats: () => ipcRenderer.invoke('chat:list') as Promise<ChatRecord[]>,
+  getChat: (chatId: string) => ipcRenderer.invoke('chat:get', chatId) as Promise<MessageRecord[]>,
+  deleteChat: (chatId: string) => ipcRenderer.invoke('chat:delete', chatId) as Promise<{ success: boolean }>,
+
+  // Messaging
+  sendMessage: (chatId: string, message: string) =>
+    ipcRenderer.invoke('chat:send', { chatId, message }) as Promise<{ success: boolean }>,
+
+  // Stream events — returns cleanup function
+  onStreamChunk: (cb: (data: { chatId: string; chunk: string }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, data: { chatId: string; chunk: string }) => cb(data)
+    ipcRenderer.on('chat:stream-chunk', handler)
+    return () => ipcRenderer.removeListener('chat:stream-chunk', handler)
+  },
+  onStreamEnd: (cb: (data: { chatId: string }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, data: { chatId: string }) => cb(data)
+    ipcRenderer.on('chat:stream-end', handler)
+    return () => ipcRenderer.removeListener('chat:stream-end', handler)
+  },
+  onStreamError: (cb: (data: { chatId: string; error: string }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, data: { chatId: string; error: string }) => cb(data)
+    ipcRenderer.on('chat:stream-error', handler)
+    return () => ipcRenderer.removeListener('chat:stream-error', handler)
+  },
+
+  // Memory
+  listMemory: () => ipcRenderer.invoke('memory:list') as Promise<MemoryRecord[]>,
+  deleteMemory: (key: string) => ipcRenderer.invoke('memory:delete', key) as Promise<{ success: boolean }>,
+
+  // Settings
+  getSettings: () => ipcRenderer.invoke('settings:get') as Promise<Record<string, string>>,
+  setSettings: (updates: Record<string, string>) =>
+    ipcRenderer.invoke('settings:set', updates) as Promise<{ success: boolean }>,
+}
+
+contextBridge.exposeInMainWorld('electronAPI', api)
+
+declare global {
+  interface Window {
+    electronAPI: typeof api
   }
-} else {
-  // @ts-ignore (define in dts)
-  window.electron = electronAPI
-  // @ts-ignore (define in dts)
-  window.api = api
 }
