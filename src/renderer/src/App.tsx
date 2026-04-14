@@ -1,35 +1,31 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import { useState } from 'react'
+import { Sidebar } from './components/Sidebar'
+import { Chat } from './components/Chat'
+import { Settings } from './components/Settings'
+import { useChat } from './hooks/useChat'
 
-function App(): React.JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+export default function App() {
+  const [showSettings, setShowSettings] = useState(false)
+  const { chats, activeChatId, messages, isStreaming, streamingContent, createChat, selectChat, deleteChat, sendMessage } = useChat()
 
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
-      </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
-    </>
+    <div className="flex h-screen bg-slate-950 text-white overflow-hidden">
+      <Sidebar
+        chats={chats}
+        activeChatId={activeChatId}
+        onNewChat={createChat}
+        onSelectChat={selectChat}
+        onDeleteChat={deleteChat}
+        onOpenSettings={() => setShowSettings(true)}
+      />
+      <Chat
+        messages={messages}
+        streamingContent={streamingContent}
+        isStreaming={isStreaming}
+        onSend={sendMessage}
+        hasActiveChat={activeChatId !== null}
+      />
+      {showSettings && <Settings onClose={() => setShowSettings(false)} />}
+    </div>
   )
 }
-
-export default App
