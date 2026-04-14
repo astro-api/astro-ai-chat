@@ -61,7 +61,6 @@ export async function sendMessage({ chatId, userMessage, window }: SendMessagePa
     system: buildSystemPrompt(),
     messages: history.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
     tools: allTools,
-    maxSteps: 10,
     stopWhen: stepCountIs(10),
   })
 
@@ -69,8 +68,8 @@ export async function sendMessage({ chatId, userMessage, window }: SendMessagePa
 
   for await (const chunk of result.fullStream) {
     if (chunk.type === 'text-delta') {
-      fullText += chunk.textDelta
-      window.webContents.send('chat:stream-chunk', { chatId, chunk: chunk.textDelta })
+      fullText += chunk.text
+      window.webContents.send('chat:stream-chunk', { chatId, chunk: chunk.text })
     }
   }
 
