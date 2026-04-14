@@ -5,7 +5,7 @@ import { db } from './db'
 import { memory } from './db/schema'
 import { getAstroClient } from './astro-client'
 
-// ─── Helper: parse a "YYYY-MM-DD" or "YYYY-MM-DD HH:MM" string into numeric parts ────
+// ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseDateParts(dateStr: string): { year: number; month: number; day: number } {
   const [datePart] = dateStr.split(' ')
@@ -28,6 +28,7 @@ function buildSubject(birthDate: string, birthTime: string, birthPlace: string, 
       day,
       hour,
       minute,
+      second: null as null,
       city: birthPlace,
       latitude: lat ?? null,
       longitude: lon ?? null,
@@ -40,15 +41,9 @@ function buildSubject(birthDate: string, birthTime: string, birthPlace: string, 
 export const saveMemoryTool = tool({
   description:
     'Save a fact about the user to persistent memory. Use this when the user mentions important personal information: name, birth date, birth time, birth place, relationship status, preferences, or any fact useful for future astrology readings.',
-  parameters: z.object({
-    key: z
-      .string()
-      .describe(
-        'Short key for the fact, e.g. "birth_date", "birth_place", "name", "partner_birth_date"',
-      ),
-    value: z
-      .string()
-      .describe('The value to remember, e.g. "1990-05-15", "Moscow, Russia"'),
+  inputSchema: z.object({
+    key: z.string().describe('Short key for the fact, e.g. "birth_date", "birth_place", "name", "partner_birth_date"'),
+    value: z.string().describe('The value to remember, e.g. "1990-05-15", "Moscow, Russia"'),
   }),
   execute: async ({ key, value }) => {
     const now = new Date()
@@ -63,7 +58,7 @@ export const saveMemoryTool = tool({
 export const getMemoriesTool = tool({
   description:
     'Retrieve all facts remembered about the user. Call this if you need to recall stored information like birth data.',
-  parameters: z.object({}),
+  inputSchema: z.object({}),
   execute: async () => {
     const rows = db.select().from(memory).all()
     return { memories: rows.map((r) => ({ key: r.key, value: r.value })) }
@@ -75,7 +70,7 @@ export const getMemoriesTool = tool({
 export const getNatalChartTool = tool({
   description:
     'Generate a natal (birth) chart showing planetary positions, house cusps, and aspects for a given person.',
-  parameters: z.object({
+  inputSchema: z.object({
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
     birthTime: z.string().describe('Birth time in HH:MM format (24h)'),
     birthPlace: z.string().describe('City/country of birth, e.g. "Moscow, Russia"'),
@@ -85,10 +80,7 @@ export const getNatalChartTool = tool({
   execute: async ({ birthDate, birthTime, birthPlace, lat, lon }) => {
     try {
       const client = await getAstroClient()
-      const result = await client.charts.getNatalChart({
-        subject: buildSubject(birthDate, birthTime, birthPlace, lat, lon),
-      })
-      return result
+      return await client.charts.getNatalChart({ subject: buildSubject(birthDate, birthTime, birthPlace, lat, lon) })
     } catch (e) {
       return { error: String(e) }
     }
@@ -98,16 +90,13 @@ export const getNatalChartTool = tool({
 export const getTransitsTool = tool({
   description:
     'Calculate current or future planetary transits to a natal chart. Shows how current planetary positions affect the birth chart.',
-  parameters: z.object({
+  inputSchema: z.object({
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
     birthTime: z.string().describe('Birth time in HH:MM format (24h)'),
     birthPlace: z.string().describe('City/country of birth'),
-    transitDate: z
-      .string()
-      .optional()
-      .describe('Date for transit calculation in YYYY-MM-DD format (defaults to today)'),
-    lat: z.number().optional().describe('Latitude of birth place'),
-    lon: z.number().optional().describe('Longitude of birth place'),
+    transitDate: z.string().optional().describe('Date for transit calculation in YYYY-MM-DD format (defaults to today)'),
+    lat: z.number().optional(),
+    lon: z.number().optional(),
   }),
   execute: async ({ birthDate, birthTime, birthPlace, transitDate, lat, lon }) => {
     try {
@@ -115,17 +104,10 @@ export const getTransitsTool = tool({
       const today = new Date()
       const tDateStr = transitDate ?? today.toISOString().split('T')[0]
       const { year, month, day } = parseDateParts(tDateStr)
-      const result = await client.charts.getTransitChart({
+      return await client.charts.getTransitChart({
         natal_subject: buildSubject(birthDate, birthTime, birthPlace, lat, lon),
-        transit_datetime: {
-          year,
-          month,
-          day,
-          hour: today.getHours(),
-          minute: today.getMinutes(),
-        },
+        transit_datetime: { year, month, day, hour: today.getHours(), minute: today.getMinutes() },
       })
-      return result
     } catch (e) {
       return { error: String(e) }
     }
@@ -141,20 +123,18 @@ const personSchema = z.object({
 })
 
 export const getSynastryTool = tool({
-  description:
-    'Calculate synastry (relationship compatibility) chart between two people by comparing their natal charts.',
-  parameters: z.object({
+  description: 'Calculate synastry (relationship compatibility) chart between two people.',
+  inputSchema: z.object({
     person1: personSchema.describe('Birth data for the first person'),
     person2: personSchema.describe('Birth data for the second person'),
   }),
   execute: async ({ person1, person2 }) => {
     try {
       const client = await getAstroClient()
-      const result = await client.charts.getSynastryChart({
+      return await client.charts.getSynastryChart({
         subject1: buildSubject(person1.birthDate, person1.birthTime, person1.birthPlace, person1.lat, person1.lon),
         subject2: buildSubject(person2.birthDate, person2.birthTime, person2.birthPlace, person2.lat, person2.lon),
       })
-      return result
     } catch (e) {
       return { error: String(e) }
     }
@@ -162,35 +142,19 @@ export const getSynastryTool = tool({
 })
 
 export const getHoroscopeTool = tool({
-  description:
-    'Get a horoscope forecast for a zodiac sign for the specified time period.',
-  parameters: z.object({
+  description: 'Get a horoscope forecast for a zodiac sign for the specified time period.',
+  inputSchema: z.object({
     sign: z
-      .enum([
-        'Aries',
-        'Taurus',
-        'Gemini',
-        'Cancer',
-        'Leo',
-        'Virgo',
-        'Libra',
-        'Scorpio',
-        'Sagittarius',
-        'Capricorn',
-        'Aquarius',
-        'Pisces',
-      ])
-      .describe('Zodiac sign'),
-    period: z
-      .enum(['daily', 'weekly', 'monthly', 'yearly'])
-      .default('daily')
-      .describe('Time period for the horoscope'),
+      .enum(['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'])
+      .describe('Zodiac sign (capitalized)'),
+    period: z.enum(['daily', 'weekly', 'monthly', 'yearly']).default('daily').describe('Time period'),
   }),
   execute: async ({ sign, period }) => {
     try {
       const client = await getAstroClient()
+      const today = new Date().toISOString().split('T')[0]
       if (period === 'daily') {
-        return await client.horoscope.getSignDailyHoroscope({ sign })
+        return await client.horoscope.getSignDailyHoroscope({ sign, date: today })
       } else if (period === 'weekly') {
         return await client.horoscope.getSignWeeklyHoroscope({ sign })
       } else if (period === 'monthly') {
@@ -205,9 +169,8 @@ export const getHoroscopeTool = tool({
 })
 
 export const getNumerologyTool = tool({
-  description:
-    'Calculate core numerology numbers (Life Path, Expression, Soul Urge, etc.) for a person based on their name and birth date.',
-  parameters: z.object({
+  description: 'Calculate core numerology numbers (Life Path, Expression, Soul Urge, etc.) for a person.',
+  inputSchema: z.object({
     name: z.string().describe("The person's full name"),
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
   }),
@@ -215,13 +178,9 @@ export const getNumerologyTool = tool({
     try {
       const client = await getAstroClient()
       const { year, month, day } = parseDateParts(birthDate)
-      const result = await client.numerology.getCoreNumbers({
-        subject: {
-          name,
-          birth_data: { year, month, day },
-        },
+      return await client.numerology.getCoreNumbers({
+        subject: { name, birth_data: { year, month, day, hour: null, minute: null, second: null } },
       })
-      return result
     } catch (e) {
       return { error: String(e) }
     }
@@ -229,46 +188,23 @@ export const getNumerologyTool = tool({
 })
 
 export const getTarotReadingTool = tool({
-  description:
-    'Perform a tarot card reading with a chosen spread. Returns drawn cards with interpretations.',
-  parameters: z.object({
-    spread: z
-      .enum(['single', 'three-card', 'celtic-cross'])
-      .default('three-card')
-      .describe('Type of tarot spread'),
-    question: z.string().optional().describe('Optional question or topic for the reading'),
+  description: 'Perform a tarot card reading. Returns drawn cards with interpretations.',
+  inputSchema: z.object({
+    spread: z.enum(['single', 'three-card', 'celtic-cross']).default('three-card').describe('Type of tarot spread'),
+    question: z.string().optional().describe('Optional question for the reading'),
   }),
-  execute: async ({ spread, question: _question }) => {
+  execute: async ({ spread }) => {
     try {
       const client = await getAstroClient()
-      // Map spread type to card count and spread_type
-      const spreadMap: Record<string, { count: number; spread_type: string }> = {
-        single: { count: 1, spread_type: 'single' },
-        'three-card': { count: 3, spread_type: 'three_card' },
-        'celtic-cross': { count: 10, spread_type: 'celtic_cross' },
-      }
-      const { count, spread_type } = spreadMap[spread]
-
+      const countMap = { single: 1, 'three-card': 3, 'celtic-cross': 10 }
+      const drawn = await client.tarot.drawCards({ count: countMap[spread] } as any)
+      const cards = (drawn as any).cards ?? (drawn as any).drawn_cards ?? []
       if (spread === 'single') {
-        return await client.tarot.generateSingleReport({
-          cards: await client.tarot
-            .drawCards({ count, exclude_reversed: false, include_annual_pillars: false } as any)
-            .then((r: any) => r.cards ?? r.drawn_cards ?? []),
-        } as any)
+        return await client.tarot.generateSingleReport({ cards } as any)
       } else if (spread === 'three-card') {
-        const drawn = await client.tarot.drawCards({
-          count,
-          exclude_reversed: false,
-          include_annual_pillars: false,
-        } as any)
-        return await client.tarot.generateThreeCardReport({ cards: (drawn as any).cards ?? (drawn as any).drawn_cards ?? [] } as any)
+        return await client.tarot.generateThreeCardReport({ cards } as any)
       } else {
-        const drawn = await client.tarot.drawCards({
-          count,
-          exclude_reversed: false,
-          include_annual_pillars: false,
-        } as any)
-        return await client.tarot.generateCelticCrossReport({ cards: (drawn as any).cards ?? (drawn as any).drawn_cards ?? [] } as any)
+        return await client.tarot.generateCelticCrossReport({ cards } as any)
       }
     } catch (e) {
       return { error: String(e) }
@@ -277,11 +213,10 @@ export const getTarotReadingTool = tool({
 })
 
 export const getHumanDesignTool = tool({
-  description:
-    'Generate a Human Design chart (bodygraph) for a person. Provides type, strategy, authority, profile, and defined/undefined centers.',
-  parameters: z.object({
+  description: 'Get Human Design analysis for a person (type, strategy, authority, profile).',
+  inputSchema: z.object({
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
-    birthTime: z.string().describe('Birth time in HH:MM format (24h) — precision is critical for Human Design'),
+    birthTime: z.string().describe('Birth time in HH:MM (precision is critical for Human Design)'),
     birthPlace: z.string().describe('City/country of birth'),
     lat: z.number().optional(),
     lon: z.number().optional(),
@@ -289,16 +224,10 @@ export const getHumanDesignTool = tool({
   execute: async ({ birthDate, birthTime, birthPlace, lat, lon }) => {
     try {
       const client = await getAstroClient()
-      // Human Design is not a dedicated client endpoint in the current library version.
-      // Using the enhanced personal analysis as the closest available proxy.
-      // TODO: verify if the library exposes a dedicated Human Design endpoint.
-      const { year, month, day } = parseDateParts(birthDate)
-      const { hour, minute } = parseTimeParts(birthTime)
-      const result = await (client as any).enhanced.getPersonalAnalysis({
+      // Human Design not dedicated — using enhanced personal analysis as proxy
+      return await (client as any).enhanced.getPersonalAnalysis({
         subject: buildSubject(birthDate, birthTime, birthPlace, lat, lon),
-        datetime: { year, month, day, hour, minute },
       })
-      return result
     } catch (e) {
       return { error: String(e) }
     }
@@ -306,9 +235,8 @@ export const getHumanDesignTool = tool({
 })
 
 export const getVedicChartTool = tool({
-  description:
-    'Generate a Vedic (Jyotish) astrology chart using the sidereal zodiac. Includes rasi chart, planetary positions, and nakshatras.',
-  parameters: z.object({
+  description: 'Generate a Vedic (Jyotish) astrology chart using the sidereal zodiac.',
+  inputSchema: z.object({
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
     birthTime: z.string().describe('Birth time in HH:MM format (24h)'),
     birthPlace: z.string().describe('City/country of birth'),
@@ -318,12 +246,10 @@ export const getVedicChartTool = tool({
   execute: async ({ birthDate, birthTime, birthPlace, lat, lon }) => {
     try {
       const client = await getAstroClient()
-      // Vedic chart uses sidereal zodiac_type
-      const result = await client.charts.getNatalChart({
+      return await client.charts.getNatalChart({
         subject: buildSubject(birthDate, birthTime, birthPlace, lat, lon),
         options: { zodiac_type: 'Sidereal' },
       })
-      return result
     } catch (e) {
       return { error: String(e) }
     }
@@ -331,30 +257,30 @@ export const getVedicChartTool = tool({
 })
 
 export const getChineseAstrologyTool = tool({
-  description:
-    'Calculate Chinese astrology (BaZi / Four Pillars of Destiny) for a person based on their birth date.',
-  parameters: z.object({
+  description: 'Calculate Chinese astrology (BaZi / Four Pillars of Destiny) for a person.',
+  inputSchema: z.object({
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
-    birthTime: z.string().optional().describe('Birth time in HH:MM format (optional, improves BaZi hour pillar)'),
+    birthTime: z.string().optional().describe('Birth time in HH:MM format (optional)'),
   }),
   execute: async ({ birthDate, birthTime }) => {
     try {
       const client = await getAstroClient()
       const { year, month, day } = parseDateParts(birthDate)
       const timeParts = birthTime ? parseTimeParts(birthTime) : null
-      const result = await client.chinese.calculateBaZi({
+      return await client.chinese.calculateBaZi({
         subject: {
           name: 'Subject',
           birth_data: {
             year,
             month,
             day,
-            ...(timeParts ? { hour: timeParts.hour } : {}),
+            hour: timeParts?.hour ?? null,
+            minute: timeParts?.minute ?? null,
+            second: null,
           },
         },
         include_annual_pillars: false,
       })
-      return result
     } catch (e) {
       return { error: String(e) }
     }
@@ -362,28 +288,22 @@ export const getChineseAstrologyTool = tool({
 })
 
 export const getSolarReturnTool = tool({
-  description:
-    'Calculate the Solar Return chart for a given year — the chart for the moment the Sun returns to its exact natal position, marking the personal new year.',
-  parameters: z.object({
+  description: 'Calculate the Solar Return chart — the chart for the moment the Sun returns to its natal position.',
+  inputSchema: z.object({
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
     birthTime: z.string().describe('Birth time in HH:MM format (24h)'),
     birthPlace: z.string().describe('City/country of birth'),
-    year: z
-      .number()
-      .optional()
-      .describe('Year for the solar return (defaults to current year)'),
+    year: z.number().optional().describe('Year for the solar return (defaults to current year)'),
     lat: z.number().optional(),
     lon: z.number().optional(),
   }),
   execute: async ({ birthDate, birthTime, birthPlace, year, lat, lon }) => {
     try {
       const client = await getAstroClient()
-      const returnYear = year ?? new Date().getFullYear()
-      const result = await client.charts.getSolarReturnChart({
+      return await client.charts.getSolarReturnChart({
         subject: buildSubject(birthDate, birthTime, birthPlace, lat, lon),
-        return_year: returnYear,
+        return_year: year ?? new Date().getFullYear(),
       })
-      return result
     } catch (e) {
       return { error: String(e) }
     }
