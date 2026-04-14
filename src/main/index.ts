@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -43,7 +43,13 @@ app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.serslon.astrology-chat')
 
-  runMigrations()
+  try {
+    runMigrations()
+  } catch (err) {
+    dialog.showErrorBox('Database Error', `Failed to initialize database:\n${err}`)
+    app.quit()
+    return
+  }
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
