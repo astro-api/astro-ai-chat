@@ -1,5 +1,6 @@
 import { MessageList } from './MessageList'
 import { InputBar } from './InputBar'
+import { useTr } from '../i18n/LanguageContext'
 
 type Message = { id: string; role: 'user' | 'assistant'; content: string }
 
@@ -12,15 +13,17 @@ interface ChatProps {
 }
 
 export function Chat({ messages, streamingContent, isStreaming, onSend, hasActiveChat }: ChatProps) {
+  const { tr } = useTr()
+
   if (!hasActiveChat) {
     return (
-      <div className="flex flex-col flex-1 items-center justify-center bg-slate-950 text-slate-500">
-        <p className="text-lg">Select a chat or create a new one</p>
+      <div className="flex flex-col flex-1 items-center justify-center" style={{ background: '#111111', color: '#585B65' }}>
+        <p className="text-lg">{tr.selectOrCreate}</p>
       </div>
     )
   }
   return (
-    <div className="flex flex-col flex-1 bg-slate-950 overflow-hidden">
+    <div className="flex flex-col flex-1 overflow-hidden" style={{ background: '#111111' }}>
       <MessageList messages={messages} streamingContent={streamingContent} isStreaming={isStreaming} />
       <InputBar onSend={onSend} disabled={isStreaming} />
     </div>

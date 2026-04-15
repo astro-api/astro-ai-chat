@@ -29,6 +29,7 @@ const api = {
   listChats: () => ipcRenderer.invoke('chat:list') as Promise<ChatRecord[]>,
   getChat: (chatId: string) => ipcRenderer.invoke('chat:get', chatId) as Promise<MessageRecord[]>,
   deleteChat: (chatId: string) => ipcRenderer.invoke('chat:delete', chatId) as Promise<{ success: boolean }>,
+  renameChat: (chatId: string, title: string) => ipcRenderer.invoke('chat:rename', { chatId, title }) as Promise<{ success: boolean }>,
 
   // Messaging
   sendMessage: (chatId: string, message: string) =>
@@ -59,6 +60,13 @@ const api = {
   getSettings: () => ipcRenderer.invoke('settings:get') as Promise<Record<string, string>>,
   setSettings: (updates: Record<string, string>) =>
     ipcRenderer.invoke('settings:set', updates) as Promise<{ success: boolean }>,
+
+  // Models
+  listModels: (provider: string) =>
+    ipcRenderer.invoke('models:list', provider) as Promise<{ models: string[] }>,
+
+  // Window
+  setTitle: (title: string) => ipcRenderer.invoke('window:set-title', title),
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)

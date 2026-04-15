@@ -1,57 +1,94 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
+@theme {
+  --color-background: #111111;
+  --color-surface: #1a1a1a;
+  --color-surface-raised: #222222;
+  --color-border: #2a2a2a;
+  --color-accent: #585B65;
+  --color-accent-hover: #6e7180;
+  --color-gray: #8B8D98;
+  --color-foreground: #e8e8e8;
+  --color-muted: #8B8D98;
+  --color-destructive: #c0392b;
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--color-border);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+}
+
+@layer components {
+  .message-prose {
+    color: #e8e8e8;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+  .message-prose h1,
+  .message-prose h2,
+  .message-prose h3 {
+    color: #e8e8e8;
+    font-weight: 600;
+    margin-top: 1.2em;
+    margin-bottom: 0.5em;
+  }
+  .message-prose h1 { font-size: 1.2em; }
+  .message-prose h2 { font-size: 1.1em; }
+  .message-prose h3 { font-size: 1em; }
+  .message-prose p {
+    margin-bottom: 0.75em;
+  }
+  .message-prose ul,
+  .message-prose ol {
+    padding-left: 1.5em;
+    margin-bottom: 0.75em;
+  }
+  .message-prose li {
+    margin-bottom: 0.25em;
+  }
+  .message-prose strong {
+    color: #e8e8e8;
+    font-weight: 600;
+  }
+  .message-prose em {
+    color: #8B8D98;
+  }
+  .message-prose code {
+    background: #222222;
+    border: 1px solid #2a2a2a;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.9em;
+    color: #8B8D98;
+  }
+  .message-prose pre {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 12px;
+    overflow-x: auto;
+    margin-bottom: 0.75em;
+  }
+  .message-prose pre code {
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .message-prose hr {
+    border-color: #2a2a2a;
+    margin: 1em 0;
+  }
+  .message-prose blockquote {
+    border-left: 3px solid #585B65;
+    padding-left: 1em;
+    color: #8B8D98;
+    margin: 0.75em 0;
   }
 }

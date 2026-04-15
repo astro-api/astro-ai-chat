@@ -1,7 +1,8 @@
 {
   "name": "astrology-chat",
   "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "description": "Astrology AI chat assistant",
+  "productName": "Astrology Chat",
   "main": "./out/main/index.js",
   "author": "serslon",
   "homepage": "https://electron-vite.org",
@@ -15,12 +16,17 @@
     "dev": "electron-vite dev",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
-    "build:unpack": "npm run build && electron-builder --dir",
+    "build:dir": "npm run build && electron-builder --dir",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:mac:dmg": "npm run build && electron-builder --mac dmg",
     "build:win": "npm run build && electron-builder --win",
-    "build:mac": "electron-vite build && electron-builder --mac",
-    "build:linux": "electron-vite build && electron-builder --linux"
+    "build:linux": "npm run build && electron-builder --linux"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.69",
+    "@ai-sdk/google": "^3.0.63",
+    "@ai-sdk/mistral": "^3.0.30",
+    "@ai-sdk/openai": "^3.0.52",
     "@astro-api/astroapi-typescript": "^1.0.1",
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
@@ -41,6 +47,7 @@
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.2.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.19.1",
@@ -58,6 +65,7 @@
     "prettier": "^3.7.4",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "vite": "^7.2.6"

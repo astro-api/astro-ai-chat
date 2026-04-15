@@ -1,5 +1,6 @@
 appId: com.serslon.astrology-chat
-productName: chat-astrology
+productName: Astrology Chat
+icon: resources/icon
 directories:
   buildResources: build
 files:
@@ -22,6 +23,7 @@ nsis:
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
 mac:
+  icon: resources/icon.icns
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.

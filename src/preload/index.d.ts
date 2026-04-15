@@ -28,6 +28,7 @@ type ElectronAPIType = {
   listChats: () => Promise<ChatRecord[]>
   getChat: (chatId: string) => Promise<MessageRecord[]>
   deleteChat: (chatId: string) => Promise<{ success: boolean }>
+  renameChat: (chatId: string, title: string) => Promise<{ success: boolean }>
   sendMessage: (chatId: string, message: string) => Promise<{ success: boolean }>
   onStreamChunk: (cb: (data: { chatId: string; chunk: string }) => void) => () => void
   onStreamEnd: (cb: (data: { chatId: string }) => void) => () => void
@@ -36,6 +37,8 @@ type ElectronAPIType = {
   deleteMemory: (key: string) => Promise<{ success: boolean }>
   getSettings: () => Promise<Record<string, string>>
   setSettings: (updates: Record<string, string>) => Promise<{ success: boolean }>
+  listModels: (provider: string) => Promise<{ models: string[] }>
+  setTitle: (title: string) => Promise<void>
 }
 
 declare global {

@@ -50,6 +50,10 @@ export function useChat() {
       setStreamingContent('')
       await loadMessages(chatId)
       await loadChats()
+      // Update title in case chat was renamed after first message
+      const chats = await window.electronAPI.listChats()
+      const chat = chats.find(c => c.id === chatId)
+      if (chat) window.electronAPI.setTitle(`AstroChat — ${chat.title}`)
     })
 
     const unsubError = window.electronAPI.onStreamError(({ error }) => {
@@ -74,6 +78,7 @@ export function useChat() {
     await loadChats()
     setActiveChatId(chat.id)
     setMessages([])
+    window.electronAPI.setTitle('AstroChat — New Chat')
     return chat
   }, [loadChats])
 
@@ -81,6 +86,10 @@ export function useChat() {
     async (chatId: string) => {
       setActiveChatId(chatId)
       await loadMessages(chatId)
+      // Find chat title from current list
+      const chats = await window.electronAPI.listChats()
+      const chat = chats.find(c => c.id === chatId)
+      if (chat) window.electronAPI.setTitle(`AstroChat — ${chat.title}`)
     },
     [loadMessages],
   )
@@ -92,6 +101,17 @@ export function useChat() {
       if (activeChatId === chatId) {
         setActiveChatId(null)
         setMessages([])
+      }
+    },
+    [activeChatId, loadChats],
+  )
+
+  const renameChat = useCallback(
+    async (chatId: string, title: string) => {
+      await window.electronAPI.renameChat(chatId, title)
+      await loadChats()
+      if (activeChatId === chatId) {
+        window.electronAPI.setTitle(`AstroChat — ${title}`)
       }
     },
     [activeChatId, loadChats],
@@ -115,6 +135,7 @@ export function useChat() {
   // Initial load
   useEffect(() => {
     loadChats()
+    window.electronAPI.setTitle('AstroChat')
   }, [loadChats])
 
   return {
@@ -126,6 +147,7 @@ export function useChat() {
     createChat,
     selectChat,
     deleteChat,
+    renameChat,
     sendMessage,
   }
 }

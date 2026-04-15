@@ -1,7 +1,6 @@
 import { useState, KeyboardEvent } from 'react'
-import { Textarea } from '@/components/ui/textarea'
-import { Button } from '@/components/ui/button'
 import { SendHorizontal } from 'lucide-react'
+import { useTr } from '../i18n/LanguageContext'
 
 interface InputBarProps {
   onSend: (message: string) => void
@@ -10,6 +9,7 @@ interface InputBarProps {
 
 export function InputBar({ onSend, disabled }: InputBarProps) {
   const [value, setValue] = useState('')
+  const { tr } = useTr()
 
   const handleSend = () => {
     const trimmed = value.trim()
@@ -26,24 +26,44 @@ export function InputBar({ onSend, disabled }: InputBarProps) {
   }
 
   return (
-    <div className="flex items-end gap-2 p-4 border-t border-slate-700 bg-slate-900">
-      <Textarea
+    <div className="flex items-end gap-2 p-4" style={{ borderTop: '1px solid #2a2a2a', background: '#111111' }}>
+      <textarea
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Ask about astrology... (Enter to send, Shift+Enter for new line)"
-        className="flex-1 min-h-[48px] max-h-[200px] resize-none bg-slate-800 border-slate-600 text-white placeholder:text-slate-500"
-        disabled={disabled}
+        placeholder={tr.inputPlaceholder}
         rows={1}
+        disabled={disabled}
+        className="flex-1 resize-none rounded-xl px-4 py-3 text-sm outline-none"
+        style={{
+          background: '#1a1a1a',
+          border: '1px solid #2a2a2a',
+          color: '#e8e8e8',
+          minHeight: '48px',
+          maxHeight: '200px',
+        }}
+        onInput={(e) => {
+          const el = e.currentTarget
+          el.style.height = 'auto'
+          el.style.height = Math.min(el.scrollHeight, 200) + 'px'
+        }}
       />
-      <Button
+      <button
         onClick={handleSend}
         disabled={disabled || !value.trim()}
-        size="icon"
-        className="h-12 w-12 bg-indigo-600 hover:bg-indigo-500"
+        className="flex items-center justify-center rounded-xl transition-colors"
+        style={{
+          width: '48px',
+          height: '48px',
+          background: disabled || !value.trim() ? '#2a2a2a' : '#585B65',
+          color: disabled || !value.trim() ? '#585B65' : '#e8e8e8',
+          flexShrink: 0,
+        }}
+        onMouseEnter={e => { if (!disabled && value.trim()) e.currentTarget.style.background = '#6e7180' }}
+        onMouseLeave={e => { if (!disabled && value.trim()) e.currentTarget.style.background = '#585B65' }}
       >
         <SendHorizontal className="h-5 w-5" />
-      </Button>
+      </button>
     </div>
   )
 }

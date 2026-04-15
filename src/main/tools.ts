@@ -2,7 +2,8 @@ import { tool } from 'ai'
 import { z } from 'zod'
 import { randomUUID } from 'crypto'
 import { db } from './db'
-import { memory } from './db/schema'
+import { memory, settings } from './db/schema'
+import { eq } from 'drizzle-orm'
 import { getAstroClient } from './astro-client'
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -18,9 +19,19 @@ function parseTimeParts(timeStr: string): { hour: number; minute: number } {
   return { hour: hour ?? 0, minute: minute ?? 0 }
 }
 
-function buildSubject(birthDate: string, birthTime: string, birthPlace: string, lat?: number, lon?: number) {
+function buildSubject(
+  birthDate: string,
+  birthTime: string,
+  birthPlace: string,
+  countryCode?: string,
+  lat?: number,
+  lon?: number,
+) {
   const { year, month, day } = parseDateParts(birthDate)
   const { hour, minute } = parseTimeParts(birthTime)
+
+  // API requires either (city + country_code) or (latitude + longitude)
+  const hasCoords = lat != null && lon != null
   return {
     birth_data: {
       year,
@@ -28,10 +39,11 @@ function buildSubject(birthDate: string, birthTime: string, birthPlace: string, 
       day,
       hour,
       minute,
-      second: null as null,
-      city: birthPlace,
-      latitude: lat ?? null,
-      longitude: lon ?? null,
+      second: 0,
+      city: hasCoords ? null : birthPlace,
+      country_code: hasCoords ? null : (countryCode ?? null),
+      latitude: hasCoords ? lat : null,
+      longitude: hasCoords ? lon : null,
     },
   }
 }
@@ -73,16 +85,19 @@ export const getNatalChartTool = tool({
   inputSchema: z.object({
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
     birthTime: z.string().describe('Birth time in HH:MM format (24h)'),
-    birthPlace: z.string().describe('City/country of birth, e.g. "Moscow, Russia"'),
-    lat: z.number().optional().describe('Latitude (optional, improves accuracy)'),
-    lon: z.number().optional().describe('Longitude (optional, improves accuracy)'),
+    birthPlace: z.string().describe('City name, e.g. "Moscow"'),
+    countryCode: z.string().describe('ISO 3166-1 alpha-2 country code, e.g. "RU", "US", "GB". Required when using city.'),
+    lat: z.number().optional().describe('Latitude — provide instead of city+countryCode for precision'),
+    lon: z.number().optional().describe('Longitude — provide instead of city+countryCode for precision'),
   }),
-  execute: async ({ birthDate, birthTime, birthPlace, lat, lon }) => {
+  execute: async ({ birthDate, birthTime, birthPlace, countryCode, lat, lon }) => {
     try {
       const client = await getAstroClient()
-      return await client.charts.getNatalChart({ subject: buildSubject(birthDate, birthTime, birthPlace, lat, lon) })
-    } catch (e) {
-      return { error: String(e) }
+      return await client.charts.getNatalChart({ subject: buildSubject(birthDate, birthTime, birthPlace, countryCode, lat, lon) })
+    } catch (e: any) {
+      console.error('[get_natal_chart] error:', e)
+      console.error('[get_natal_chart] details:', JSON.stringify(e?.details ?? e?.cause?.body, null, 2))
+      return { error: String(e), details: e?.details ?? e?.cause?.body }
     }
   },
 })
@@ -93,23 +108,36 @@ export const getTransitsTool = tool({
   inputSchema: z.object({
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
     birthTime: z.string().describe('Birth time in HH:MM format (24h)'),
-    birthPlace: z.string().describe('City/country of birth'),
+    birthPlace: z.string().describe('City name for birth location, e.g. "Moscow"'),
+    countryCode: z.string().describe('ISO 3166-1 alpha-2 country code, e.g. "RU", "US", "GB"'),
     transitDate: z.string().optional().describe('Date for transit calculation in YYYY-MM-DD format (defaults to today)'),
+    transitPlace: z.string().optional().describe('City for transit location — defaults to birthPlace'),
+    transitCountryCode: z.string().optional().describe('Country code for transit location — defaults to countryCode'),
     lat: z.number().optional(),
     lon: z.number().optional(),
   }),
-  execute: async ({ birthDate, birthTime, birthPlace, transitDate, lat, lon }) => {
+  execute: async ({ birthDate, birthTime, birthPlace, countryCode, transitDate, transitPlace, transitCountryCode, lat, lon }) => {
     try {
       const client = await getAstroClient()
-      const today = new Date()
-      const tDateStr = transitDate ?? today.toISOString().split('T')[0]
+      const now = new Date()
+      const tDateStr = transitDate ?? now.toISOString().split('T')[0]
       const { year, month, day } = parseDateParts(tDateStr)
+      const tCity = transitPlace ?? birthPlace
+      const tCountry = transitCountryCode ?? countryCode
       return await client.charts.getTransitChart({
-        natal_subject: buildSubject(birthDate, birthTime, birthPlace, lat, lon),
-        transit_datetime: { year, month, day, hour: today.getHours(), minute: today.getMinutes() },
+        natal_subject: buildSubject(birthDate, birthTime, birthPlace, countryCode, lat, lon),
+        transit_datetime: {
+          year, month, day,
+          hour: now.getHours(),
+          minute: now.getMinutes(),
+          city: tCity,
+          country_code: tCountry,
+        } as any,
       })
-    } catch (e) {
-      return { error: String(e) }
+    } catch (e: any) {
+      console.error('[get_transits] error:', e)
+      console.error('[get_transits] details:', JSON.stringify(e?.details ?? e?.cause?.body, null, 2))
+      return { error: String(e), details: e?.details ?? e?.cause?.body }
     }
   },
 })
@@ -117,7 +145,8 @@ export const getTransitsTool = tool({
 const personSchema = z.object({
   birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
   birthTime: z.string().describe('Birth time in HH:MM format (24h)'),
-  birthPlace: z.string().describe('City/country of birth'),
+  birthPlace: z.string().describe('City name, e.g. "Moscow"'),
+  countryCode: z.string().describe('ISO 3166-1 alpha-2 country code, e.g. "RU", "US", "GB"'),
   lat: z.number().optional(),
   lon: z.number().optional(),
 })
@@ -132,8 +161,8 @@ export const getSynastryTool = tool({
     try {
       const client = await getAstroClient()
       return await client.charts.getSynastryChart({
-        subject1: buildSubject(person1.birthDate, person1.birthTime, person1.birthPlace, person1.lat, person1.lon),
-        subject2: buildSubject(person2.birthDate, person2.birthTime, person2.birthPlace, person2.lat, person2.lon),
+        subject1: buildSubject(person1.birthDate, person1.birthTime, person1.birthPlace, person1.countryCode, person1.lat, person1.lon),
+        subject2: buildSubject(person2.birthDate, person2.birthTime, person2.birthPlace, person2.countryCode, person2.lat, person2.lon),
       })
     } catch (e) {
       return { error: String(e) }
@@ -179,7 +208,7 @@ export const getNumerologyTool = tool({
       const client = await getAstroClient()
       const { year, month, day } = parseDateParts(birthDate)
       return await client.numerology.getCoreNumbers({
-        subject: { name, birth_data: { year, month, day, hour: null, minute: null, second: null } },
+        subject: { name, birth_data: { year, month, day, hour: 0, minute: 0, second: 0 } },
       })
     } catch (e) {
       return { error: String(e) }
@@ -193,42 +222,74 @@ export const getTarotReadingTool = tool({
     spread: z.enum(['single', 'three-card', 'celtic-cross']).default('three-card').describe('Type of tarot spread'),
     question: z.string().optional().describe('Optional question for the reading'),
   }),
-  execute: async ({ spread }) => {
+  execute: async ({ spread, question }) => {
+    console.log('[get_tarot_reading] called with:', { spread, question })
     try {
       const client = await getAstroClient()
-      const countMap = { single: 1, 'three-card': 3, 'celtic-cross': 10 }
-      const drawn = await client.tarot.drawCards({ count: countMap[spread] } as any)
-      const cards = (drawn as any).cards ?? (drawn as any).drawn_cards ?? []
+      const spreadTypeMap = { single: 'single', 'three-card': 'three_card', 'celtic-cross': 'celtic_cross' } as const
+      const reportRequest = {
+        spread_type: spreadTypeMap[spread],
+        use_reversals: true,
+        include_dignities: false,
+        include_timing: false,
+        include_astro_context: false,
+        include_birth_cards: false,
+        interpretation_depth: 'detailed' as const,
+        language: 'ru',
+      } as any
+      console.log('[get_tarot_reading] request:', JSON.stringify(reportRequest, null, 2))
       if (spread === 'single') {
-        return await client.tarot.generateSingleReport({ cards } as any)
+        return await client.tarot.generateSingleReport(reportRequest)
       } else if (spread === 'three-card') {
-        return await client.tarot.generateThreeCardReport({ cards } as any)
+        return await client.tarot.generateThreeCardReport(reportRequest)
       } else {
-        return await client.tarot.generateCelticCrossReport({ cards } as any)
+        return await client.tarot.generateCelticCrossReport(reportRequest)
       }
-    } catch (e) {
-      return { error: String(e) }
+    } catch (e: any) {
+      console.error('[get_tarot_reading] error:', e)
+      console.error('[get_tarot_reading] details:', JSON.stringify(e?.details ?? e?.cause?.body, null, 2))
+      return { error: String(e), details: e?.details ?? e?.cause?.body }
     }
   },
 })
 
 export const getHumanDesignTool = tool({
-  description: 'Get Human Design analysis for a person (type, strategy, authority, profile).',
+  description: 'Get Human Design bodygraph analysis for a person (type, strategy, authority, profile, centers, channels, gates).',
   inputSchema: z.object({
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
-    birthTime: z.string().describe('Birth time in HH:MM (precision is critical for Human Design)'),
-    birthPlace: z.string().describe('City/country of birth'),
-    lat: z.number().optional(),
-    lon: z.number().optional(),
+    birthTime: z.string().describe('Birth time in HH:MM — precision is critical for Human Design'),
+    birthPlace: z.string().describe('City name, e.g. "Kyiv"'),
+    countryCode: z.string().describe('ISO 3166-1 alpha-2 country code, e.g. "UA", "RU", "US"'),
+    name: z.string().optional().describe('Person name'),
   }),
-  execute: async ({ birthDate, birthTime, birthPlace, lat, lon }) => {
+  execute: async ({ birthDate, birthTime, birthPlace, countryCode, name }) => {
     try {
-      const client = await getAstroClient()
-      // Human Design not dedicated — using enhanced personal analysis as proxy
-      return await (client as any).enhanced.getPersonalAnalysis({
-        subject: buildSubject(birthDate, birthTime, birthPlace, lat, lon),
+      const row = db.select().from(settings).where(eq(settings.key, 'ASTROLOGY_API_KEY')).get()
+      if (!row?.value) throw new Error('ASTROLOGY_API_KEY not configured')
+      const { year, month, day } = parseDateParts(birthDate)
+      const { hour, minute } = parseTimeParts(birthTime)
+      const body = {
+        subject: {
+          name: name ?? 'Subject',
+          birth_data: { year, month, day, hour, minute, second: 0, city: birthPlace, country_code: countryCode },
+        },
+        options: { include_interpretations: true, language: 'ru' },
+        hd_options: { include_channels: true, include_design_chart: true },
+      }
+      console.log('[get_human_design] request:', JSON.stringify(body, null, 2))
+      const res = await fetch('https://api.astrology-api.io/api/v3/human-design/bodygraph', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': row.value },
+        body: JSON.stringify(body),
       })
-    } catch (e) {
+      const json = await res.json()
+      if (!res.ok) {
+        console.error('[get_human_design] error:', res.status, JSON.stringify(json, null, 2))
+        return { error: `HTTP ${res.status}`, details: json }
+      }
+      return json
+    } catch (e: any) {
+      console.error('[get_human_design] error:', e)
       return { error: String(e) }
     }
   },
@@ -239,15 +300,16 @@ export const getVedicChartTool = tool({
   inputSchema: z.object({
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
     birthTime: z.string().describe('Birth time in HH:MM format (24h)'),
-    birthPlace: z.string().describe('City/country of birth'),
+    birthPlace: z.string().describe('City name, e.g. "Moscow"'),
+    countryCode: z.string().describe('ISO 3166-1 alpha-2 country code, e.g. "RU", "US", "GB"'),
     lat: z.number().optional(),
     lon: z.number().optional(),
   }),
-  execute: async ({ birthDate, birthTime, birthPlace, lat, lon }) => {
+  execute: async ({ birthDate, birthTime, birthPlace, countryCode, lat, lon }) => {
     try {
       const client = await getAstroClient()
       return await client.charts.getNatalChart({
-        subject: buildSubject(birthDate, birthTime, birthPlace, lat, lon),
+        subject: buildSubject(birthDate, birthTime, birthPlace, countryCode, lat, lon),
         options: { zodiac_type: 'Sidereal' },
       })
     } catch (e) {
@@ -274,12 +336,15 @@ export const getChineseAstrologyTool = tool({
             year,
             month,
             day,
-            hour: timeParts?.hour ?? null,
-            minute: timeParts?.minute ?? null,
-            second: null,
+            hour: timeParts?.hour ?? 0,
+            minute: timeParts?.minute ?? 0,
+            second: 0,
           },
         },
         include_annual_pillars: false,
+        language: 'ru',
+        tradition: 'classical',
+        analysis_depth: 'standard',
       })
     } catch (e) {
       return { error: String(e) }
@@ -292,16 +357,17 @@ export const getSolarReturnTool = tool({
   inputSchema: z.object({
     birthDate: z.string().describe('Birth date in YYYY-MM-DD format'),
     birthTime: z.string().describe('Birth time in HH:MM format (24h)'),
-    birthPlace: z.string().describe('City/country of birth'),
+    birthPlace: z.string().describe('City name, e.g. "Moscow"'),
+    countryCode: z.string().describe('ISO 3166-1 alpha-2 country code, e.g. "RU", "US", "GB"'),
     year: z.number().optional().describe('Year for the solar return (defaults to current year)'),
     lat: z.number().optional(),
     lon: z.number().optional(),
   }),
-  execute: async ({ birthDate, birthTime, birthPlace, year, lat, lon }) => {
+  execute: async ({ birthDate, birthTime, birthPlace, countryCode, year, lat, lon }) => {
     try {
       const client = await getAstroClient()
       return await client.charts.getSolarReturnChart({
-        subject: buildSubject(birthDate, birthTime, birthPlace, lat, lon),
+        subject: buildSubject(birthDate, birthTime, birthPlace, countryCode, lat, lon),
         return_year: year ?? new Date().getFullYear(),
       })
     } catch (e) {

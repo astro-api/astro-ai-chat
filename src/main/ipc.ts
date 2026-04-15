@@ -29,6 +29,11 @@ export function registerIpcHandlers(): void {
     return { success: true }
   })
 
+  ipcMain.handle('chat:rename', (_event, { chatId, title }: { chatId: string; title: string }) => {
+    db.update(chats).set({ title, updatedAt: new Date() }).where(eq(chats.id, chatId)).run()
+    return { success: true }
+  })
+
   // ── Messaging / Streaming ─────────────────────────────────────────────────────
 
   ipcMain.handle('chat:send', async (event, { chatId, message }: { chatId: string; message: string }) => {
@@ -69,5 +74,59 @@ export function registerIpcHandlers(): void {
     }
     resetAstroClient()
     return { success: true }
+  })
+
+  // ── Window ────────────────────────────────────────────────────────────────────
+
+  ipcMain.handle('window:set-title', (event, title: string) => {
+    BrowserWindow.fromWebContents(event.sender)?.setTitle(title)
+  })
+
+  // ── Models ────────────────────────────────────────────────────────────────────
+
+  ipcMain.handle('models:list', async (_event, provider: string) => {
+    const getKey = (key: string) => db.select().from(settings).where(eq(settings.key, key)).get()?.value
+
+    // Static models for providers without list API
+    const staticModels: Record<string, string[]> = {
+      anthropic: ['claude-opus-4-6', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001', 'claude-opus-4-5', 'claude-sonnet-4-5', 'claude-haiku-4-5'],
+      mistral: ['mistral-large-latest', 'mistral-medium-latest', 'mistral-small-latest', 'codestral-latest', 'open-mistral-nemo'],
+    }
+    if (staticModels[provider]) return { models: staticModels[provider] }
+
+    try {
+      if (provider === 'openrouter') {
+        const apiKey = getKey('OPENROUTER_API_KEY')
+        if (!apiKey) return { models: [] }
+        const res = await fetch('https://openrouter.ai/api/v1/models', {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        })
+        const json = await res.json() as any
+        return { models: (json.data ?? []).map((m: any) => m.id).sort() }
+      }
+
+      if (provider === 'openai') {
+        const apiKey = getKey('OPENAI_API_KEY')
+        if (!apiKey) return { models: [] }
+        const res = await fetch('https://api.openai.com/v1/models', {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        })
+        const json = await res.json() as any
+        const models = (json.data ?? []).map((m: any) => m.id).filter((id: string) => id.startsWith('gpt') || id.startsWith('o')).sort()
+        return { models }
+      }
+
+      if (provider === 'google') {
+        const apiKey = getKey('GOOGLE_API_KEY')
+        if (!apiKey) return { models: [] }
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`)
+        const json = await res.json() as any
+        const models = (json.models ?? []).map((m: any) => m.name.replace('models/', '')).sort()
+        return { models }
+      }
+    } catch (e) {
+      console.error('[models:list] error:', e)
+    }
+    return { models: [] }
   })
 }
