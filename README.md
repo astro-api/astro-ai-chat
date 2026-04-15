@@ -97,6 +97,44 @@ npm run build:linux
 
 ---
 
+## Releasing a New Version
+
+Releases are built automatically by GitHub Actions when a version tag is pushed. The workflow builds macOS (universal DMG), Windows (NSIS installer), and Linux (AppImage, deb, snap) in parallel and publishes them as a GitHub Release.
+
+### Steps
+
+**1. Bump the version**
+
+```bash
+npm version patch   # 1.0.0 → 1.0.1  (bug fix)
+npm version minor   # 1.0.0 → 1.1.0  (new feature)
+npm version major   # 1.0.0 → 2.0.0  (breaking change)
+```
+
+This updates `package.json` and creates a git commit automatically.
+
+**2. Push the commit and tag**
+
+```bash
+git push origin master --tags
+```
+
+**3. Wait for CI**
+
+GitHub Actions will run three build jobs (~10 min) and publish a Release at:
+`https://github.com/<owner>/chat_astrology/releases`
+
+### Pre-releases
+
+For beta versions, use a tag with a `-` suffix — the release will be marked as pre-release automatically:
+
+```bash
+npm version prerelease --preid=beta   # → 1.0.1-beta.0
+git push origin master --tags
+```
+
+---
+
 ## Project Structure
 
 ```
