@@ -19,8 +19,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build macOS (universal DMG)
-        run: npm run build:mac:dmg
+      - name: Build macOS (universal PKG + DMG)
+        run: npm run build:mac
 
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
@@ -68,17 +68,17 @@ jobs:
       - name: Build Linux
         run: npm run build:linux
 
-      - name: Upload Linux artifact
+      - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
           name: linux-packages
           path: |
             dist/*.AppImage
             dist/*.deb
-            dist/*.snap
 
   release:
     needs: [build-mac, build-windows, build-linux]
+    if: ${{ always() && needs.build-mac.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -102,16 +102,16 @@ jobs:
             | Platform | File |
             |---|---|
             | macOS (Intel + Apple Silicon) | `.pkg` — recommended, installs without extra steps |
-            | macOS alternative | `.dmg` — drag & drop, but may require manual signing |
+            | macOS alternative | `.dmg` — drag & drop |
             | Windows | `.exe` (NSIS installer) |
-            | Linux | `.AppImage`, `.deb`, `.snap` |
+            | Linux | `.AppImage`, `.deb` |
 
-            **macOS:** Use the `.pkg` installer for the smoothest experience — no Terminal required.
+            **macOS:** Use the `.pkg` installer — no Terminal required.
 
             ### API Keys required
             Configure in Settings after launch. Get keys at:
             - [OpenRouter](https://openrouter.ai/keys) (recommended)
-            - [Astrology API](https://astrology-api.io)
+            - [Astrology API](https://dashboard.astrology-api.io)
           files: artifacts/**/*
           fail_on_unmatched_files: false
           draft: false
