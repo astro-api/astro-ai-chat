@@ -103,8 +103,10 @@ jobs:
             | Windows | `.exe` (NSIS installer) |
             | Linux | `.AppImage`, `.deb`, `.snap` |
 
-            **macOS first launch:** Right-click → Open, then click Open in the dialog.
-            Or run: `xattr -dr com.apple.quarantine "/Applications/AstroAI.app"`
+            **macOS first launch:** Run once after installing:
+            ```
+            codesign --deep --force --sign - "/Applications/AstroAI.app" && xattr -dr com.apple.quarantine "/Applications/AstroAI.app"
+            ```
 
             ### API Keys required
             Configure in Settings after launch. Get keys at:

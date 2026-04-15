@@ -71,17 +71,16 @@ npm run build:mac:dmg
 
 The built app will be in `dist/`.
 
-**First launch on macOS:** Because the app is signed with an ad-hoc signature (not an Apple Developer ID), macOS Gatekeeper will block it on the first open. To bypass:
+**First launch on macOS:** Because the app uses an ad-hoc signature (no Apple Developer ID), macOS may block it. Run this command once after installing:
 
-1. Right-click the `.app` → **Open**
-2. Click **Open** in the dialog
-
-After the first launch, macOS will remember the exception and the app will open normally.
-
-Alternatively, remove the quarantine attribute after installation:
 ```bash
-xattr -dr com.apple.quarantine "/Applications/AstroAI.app"
+codesign --deep --force --sign - "/Applications/AstroAI.app" && xattr -dr com.apple.quarantine "/Applications/AstroAI.app"
 ```
+
+Or step by step:
+1. Sign the app: `codesign --deep --force --sign - "/Applications/AstroAI.app"`
+2. Remove quarantine: `xattr -dr com.apple.quarantine "/Applications/AstroAI.app"`
+3. Launch normally
 
 ### Windows
 
