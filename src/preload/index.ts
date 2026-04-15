@@ -67,6 +67,9 @@ const api = {
 
   // Window
   setTitle: (title: string) => ipcRenderer.invoke('window:set-title', title),
+
+  // Shell
+  openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url) as Promise<void>,
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)

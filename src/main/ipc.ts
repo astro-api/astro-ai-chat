@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, shell } from 'electron'
 import { db } from './db'
 import { chats, messages, memory, settings } from './db/schema'
 import { eq, desc } from 'drizzle-orm'
@@ -80,6 +80,11 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('window:set-title', (event, title: string) => {
     BrowserWindow.fromWebContents(event.sender)?.setTitle(title)
+  })
+
+  // ── Shell ─────────────────────────────────────────────────────────────────────
+  ipcMain.handle('shell:openExternal', (_event, url: string) => {
+    shell.openExternal(url)
   })
 
   // ── Models ────────────────────────────────────────────────────────────────────
