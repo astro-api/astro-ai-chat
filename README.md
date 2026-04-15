@@ -1,34 +1,134 @@
-# chat-astrology
+# Astrology Chat
 
-An Electron application with React and TypeScript
+A desktop AI chat app for astrology, numerology, tarot, Human Design, and related esoteric systems. Powered by large language models via multiple providers and the [Astrology API](https://astrology-api.io).
 
-## Recommended IDE Setup
+Built with Electron, React 19, TypeScript, and Tailwind CSS v4.
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+---
 
-## Project Setup
+## Features
 
-### Install
+- AI chat with an astrology-focused system prompt
+- 12 astrology tools: natal chart, transits, synastry, horoscope, numerology, tarot, Human Design, Vedic chart, Chinese astrology (BaZi), solar return, and more
+- Multi-provider LLM support: OpenRouter, Anthropic, OpenAI, Google Gemini, Mistral
+- Persistent chat history (SQLite)
+- User memory — the AI remembers facts about you across sessions
+- Multilingual UI: English, Russian, Spanish, German, French, Portuguese, Ukrainian, Turkish
+- Inline chat rename, sidebar navigation
+- Dark theme
+
+---
+
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) 18+
+- [npm](https://npmjs.com/) 9+
+
+---
+
+## API Keys
+
+You will need at least one of the following:
+
+| Provider | Where to get the key |
+|---|---|
+| **OpenRouter** (recommended) | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| Anthropic | [console.anthropic.com](https://console.anthropic.com/) |
+| OpenAI | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
+| Google Gemini | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
+| Mistral | [console.mistral.ai](https://console.mistral.ai/) |
+| **Astrology API** | [astrology-api.io](https://astrology-api.io) |
+
+Enter keys in the app via **Settings** (gear icon in the sidebar).
+
+---
+
+## Development
 
 ```bash
-$ npm install
+# Install dependencies
+npm install
+
+# Start in development mode (hot reload)
+npm run dev
 ```
 
-### Development
+> **Note:** After changing files in `src/main/`, electron-vite HMR does not always recompile the main process. If changes don't appear, run `npm run build` and restart.
+
+---
+
+## Building
+
+### macOS
 
 ```bash
-$ npm run dev
+# Build universal .app (Intel + Apple Silicon)
+npm run build:mac
+
+# Build DMG installer
+npm run build:mac:dmg
 ```
 
-### Build
+The built app will be in `dist/`.
+
+**First launch on macOS:** Because the app is signed with an ad-hoc signature (not an Apple Developer ID), macOS Gatekeeper will block it on the first open. To bypass:
+
+1. Right-click the `.app` → **Open**
+2. Click **Open** in the dialog
+
+After the first launch, macOS will remember the exception and the app will open normally.
+
+Alternatively, remove the quarantine attribute after installation:
+```bash
+xattr -dr com.apple.quarantine "/Applications/Astrology Chat.app"
+```
+
+### Windows
 
 ```bash
-# For windows
-$ npm run build:win
-
-# For macOS
-$ npm run build:mac
-
-# For Linux
-$ npm run build:linux
+npm run build:win
 ```
+
+### Linux
+
+```bash
+npm run build:linux
+```
+
+---
+
+## Project Structure
+
+```
+src/
+  main/          — Electron main process (Node.js, SQLite, AI, IPC)
+  preload/       — IPC bridge (contextBridge → window.electronAPI)
+  renderer/      — React UI (browser context, no Node access)
+    components/  — Chat, Sidebar, Settings, MessageList, InputBar, Message
+    hooks/       — useChat (chat state + IPC event listeners)
+    i18n/        — LanguageContext, translations, useLanguage
+resources/
+  icon.png       — App icon source (512×512)
+  icon.icns      — macOS icon bundle
+scripts/
+  sign.sh        — Ad-hoc code signing for macOS builds
+  gen-icon.mjs   — Icon generator (Sharp)
+```
+
+---
+
+## Tech Stack
+
+- **Electron** + **electron-vite** — desktop shell + build tooling
+- **React 19** + **TypeScript** — UI
+- **Tailwind CSS v4** — styling
+- **shadcn/ui** + **Radix UI** — component primitives
+- **Vercel AI SDK** (`ai`) — LLM streaming with tool calls
+- **SQLite** via `better-sqlite3` + **Drizzle ORM** — local database
+- **@astro-api/astroapi-typescript** — Astrology API client
+
+---
+
+## License
+
+MIT
