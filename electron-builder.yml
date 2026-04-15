@@ -22,7 +22,7 @@ nsis:
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
-afterSign: scripts/sign.sh
+afterSign: scripts/sign.cjs
 mac:
   icon: resources/icon.icns
   entitlementsInherit: build/entitlements.mac.plist
