@@ -35,6 +35,11 @@ export type Translations = {
   save: string
   saved: string
   language: string
+  // Onboarding
+  setupTitle: string
+  setupDescription: string
+  setupOpenSettings: string
+  getApiKey: string
 }
 
 const t: Record<Language, Translations> = {
@@ -58,6 +63,10 @@ const t: Record<Language, Translations> = {
     save: 'Save',
     saved: 'Saved!',
     language: 'Language',
+    setupTitle: 'Get started',
+    setupDescription: 'To start chatting, you need two API keys: one for the AI provider and one for the Astrology API.',
+    setupOpenSettings: 'Open Settings',
+    getApiKey: 'Get API key',
   },
   ru: {
     newChat: 'Новый чат',
@@ -79,6 +88,10 @@ const t: Record<Language, Translations> = {
     save: 'Сохранить',
     saved: 'Сохранено!',
     language: 'Язык',
+    setupTitle: 'Начало работы',
+    setupDescription: 'Для начала работы нужны два API ключа: один для провайдера ИИ, другой для Astrology API.',
+    setupOpenSettings: 'Открыть настройки',
+    getApiKey: 'Получить ключ',
   },
   es: {
     newChat: 'Nuevo chat',
@@ -100,6 +113,10 @@ const t: Record<Language, Translations> = {
     save: 'Guardar',
     saved: '¡Guardado!',
     language: 'Idioma',
+    setupTitle: 'Empezar',
+    setupDescription: 'Para comenzar a chatear, necesitas dos claves API: una para el proveedor de IA y otra para la API de Astrología.',
+    setupOpenSettings: 'Abrir configuración',
+    getApiKey: 'Obtener clave API',
   },
   de: {
     newChat: 'Neuer Chat',
@@ -121,6 +138,10 @@ const t: Record<Language, Translations> = {
     save: 'Speichern',
     saved: 'Gespeichert!',
     language: 'Sprache',
+    setupTitle: 'Erste Schritte',
+    setupDescription: 'Um zu chatten, benötigst du zwei API-Schlüssel: einen für den KI-Anbieter und einen für die Astrologie-API.',
+    setupOpenSettings: 'Einstellungen öffnen',
+    getApiKey: 'API-Schlüssel holen',
   },
   fr: {
     newChat: 'Nouveau chat',
@@ -142,6 +163,10 @@ const t: Record<Language, Translations> = {
     save: 'Enregistrer',
     saved: 'Enregistré !',
     language: 'Langue',
+    setupTitle: 'Commencer',
+    setupDescription: "Pour commencer à chatter, vous avez besoin de deux clés API : une pour le fournisseur d'IA et une pour l'API d'Astrologie.",
+    setupOpenSettings: 'Ouvrir les paramètres',
+    getApiKey: 'Obtenir une clé API',
   },
   pt: {
     newChat: 'Novo chat',
@@ -163,6 +188,10 @@ const t: Record<Language, Translations> = {
     save: 'Salvar',
     saved: 'Salvo!',
     language: 'Idioma',
+    setupTitle: 'Começar',
+    setupDescription: 'Para começar a conversar, você precisa de duas chaves de API: uma para o provedor de IA e outra para a API de Astrologia.',
+    setupOpenSettings: 'Abrir configurações',
+    getApiKey: 'Obter chave de API',
   },
   uk: {
     newChat: 'Новий чат',
@@ -184,6 +213,10 @@ const t: Record<Language, Translations> = {
     save: 'Зберегти',
     saved: 'Збережено!',
     language: 'Мова',
+    setupTitle: 'Початок роботи',
+    setupDescription: 'Для початку роботи потрібні два API ключі: один для провайдера ШІ, інший для Astrology API.',
+    setupOpenSettings: 'Відкрити налаштування',
+    getApiKey: 'Отримати ключ',
   },
   tr: {
     newChat: 'Yeni Sohbet',
@@ -205,6 +238,10 @@ const t: Record<Language, Translations> = {
     save: 'Kaydet',
     saved: 'Kaydedildi!',
     language: 'Dil',
+    setupTitle: 'Başlarken',
+    setupDescription: "Sohbet etmeye başlamak için iki API anahtarına ihtiyacınız var: biri YZ sağlayıcısı için, diğeri Astroloji API'si için.",
+    setupOpenSettings: 'Ayarları aç',
+    getApiKey: 'API anahtarı al',
   },
 }
 
