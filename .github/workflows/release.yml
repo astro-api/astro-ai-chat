@@ -19,10 +19,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Build JS (typecheck + vite)
+        run: npm run build
+
       - name: Rebuild native modules for x64
         run: npx electron-rebuild --arch x64
 
-      - name: Build macOS x64
+      - name: Package macOS x64
         run: npx electron-builder --mac --x64
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
@@ -30,7 +33,7 @@ jobs:
       - name: Rebuild native modules for arm64
         run: npx electron-rebuild --arch arm64
 
-      - name: Build macOS arm64
+      - name: Package macOS arm64
         run: npx electron-builder --mac --arm64
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
