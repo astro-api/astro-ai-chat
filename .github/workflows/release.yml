@@ -22,13 +22,6 @@ jobs:
       - name: Build macOS (universal DMG)
         run: npm run build:mac:dmg
 
-      - name: Ad-hoc sign
-        run: |
-          APP=$(find dist/mac-universal -name "*.app" | head -1)
-          if [ -n "$APP" ]; then
-            codesign --deep --force --sign - "$APP"
-          fi
-
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
