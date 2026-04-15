@@ -7,7 +7,7 @@ import { LanguageProvider } from './i18n/LanguageContext'
 
 export default function App() {
   const [showSettings, setShowSettings] = useState(false)
-  const { chats, activeChatId, messages, isStreaming, streamingContent, createChat, selectChat, deleteChat, renameChat, sendMessage } = useChat()
+  const { chats, activeChatId, messages, isStreaming, streamingContent, createChat, selectChat, deleteChat, renameChat, sendMessage, hasApiKeys, recheckApiKeys } = useChat()
 
   return (
     <LanguageProvider>
@@ -27,8 +27,10 @@ export default function App() {
           isStreaming={isStreaming}
           onSend={sendMessage}
           hasActiveChat={activeChatId !== null}
+          hasApiKeys={hasApiKeys}
+          onOpenSettings={() => setShowSettings(true)}
         />
-        {showSettings && <Settings onClose={() => setShowSettings(false)} />}
+        {showSettings && <Settings onClose={() => { setShowSettings(false); recheckApiKeys() }} />}
       </div>
     </LanguageProvider>
   )

@@ -20,6 +20,7 @@ export function useChat() {
   const [isStreaming, setIsStreaming] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const streamingContentRef = useRef('')
+  const [hasApiKeys, setHasApiKeys] = useState(true) // optimistic: assume configured
 
   const loadChats = useCallback(async () => {
     const list = await window.electronAPI.listChats()
@@ -132,11 +133,21 @@ export function useChat() {
     [activeChatId, isStreaming],
   )
 
+  const recheckApiKeys = useCallback(() => {
+    window.electronAPI.getSettings().then((s) => {
+      const aiKeys = ['OPENROUTER_API_KEY', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'GOOGLE_API_KEY', 'MISTRAL_API_KEY']
+      const hasAI = aiKeys.some(k => s[k]?.trim())
+      const hasAstro = !!s['ASTROLOGY_API_KEY']?.trim()
+      setHasApiKeys(hasAI && hasAstro)
+    })
+  }, [])
+
   // Initial load
   useEffect(() => {
     loadChats()
     window.electronAPI.setTitle('AstroChat')
-  }, [loadChats])
+    recheckApiKeys()
+  }, [loadChats, recheckApiKeys])
 
   return {
     chats,
@@ -149,5 +160,7 @@ export function useChat() {
     deleteChat,
     renameChat,
     sendMessage,
+    hasApiKeys,
+    recheckApiKeys,
   }
 }
