@@ -22,11 +22,13 @@ jobs:
       - name: Build macOS (universal DMG)
         run: npm run build:mac:dmg
 
-      - name: Upload macOS artifact
+      - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mac-dmg
-          path: dist/*.dmg
+          name: mac-installers
+          path: |
+            dist/*.pkg
+            dist/*.dmg
 
   build-windows:
     runs-on: windows-latest
@@ -99,14 +101,12 @@ jobs:
 
             | Platform | File |
             |---|---|
-            | macOS (Intel + Apple Silicon) | `.dmg` |
+            | macOS (Intel + Apple Silicon) | `.pkg` — recommended, installs without extra steps |
+            | macOS alternative | `.dmg` — drag & drop, but may require manual signing |
             | Windows | `.exe` (NSIS installer) |
             | Linux | `.AppImage`, `.deb`, `.snap` |
 
-            **macOS first launch:** Run once after installing:
-            ```
-            codesign --deep --force --sign - "/Applications/AstroAI.app" && xattr -dr com.apple.quarantine "/Applications/AstroAI.app"
-            ```
+            **macOS:** Use the `.pkg` installer for the smoothest experience — no Terminal required.
 
             ### API Keys required
             Configure in Settings after launch. Get keys at:

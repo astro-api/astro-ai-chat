@@ -25,6 +25,7 @@ nsis:
 afterSign: scripts/sign.cjs
 mac:
   icon: resources/icon.icns
+  entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
@@ -32,8 +33,18 @@ mac:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
+  target:
+    - target: pkg
+      arch: universal
+    - target: dmg
+      arch: universal
 dmg:
   artifactName: ${name}-${version}.${ext}
+pkg:
+  artifactName: ${name}-${version}.${ext}
+  allowAnywhere: false
+  allowCurrentUserHome: false
+  isRelocatable: false
 linux:
   target:
     - AppImage

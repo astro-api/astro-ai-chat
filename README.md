@@ -71,16 +71,7 @@ npm run build:mac:dmg
 
 The built app will be in `dist/`.
 
-**First launch on macOS:** Because the app uses an ad-hoc signature (no Apple Developer ID), macOS may block it. Run this command once after installing:
-
-```bash
-codesign --deep --force --sign - "/Applications/AstroAI.app" && xattr -dr com.apple.quarantine "/Applications/AstroAI.app"
-```
-
-Or step by step:
-1. Sign the app: `codesign --deep --force --sign - "/Applications/AstroAI.app"`
-2. Remove quarantine: `xattr -dr com.apple.quarantine "/Applications/AstroAI.app"`
-3. Launch normally
+**macOS installation:** Use the `.pkg` installer — it goes through the standard macOS Installer and launches without any extra steps. The `.dmg` is also available for drag & drop installation.
 
 ### Windows
 

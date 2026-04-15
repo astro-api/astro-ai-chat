@@ -19,6 +19,7 @@
     "build:dir": "npm run build && electron-builder --dir",
     "build:mac": "npm run build && electron-builder --mac",
     "build:mac:dmg": "npm run build && electron-builder --mac dmg",
+    "build:mac:pkg": "npm run build && electron-builder --mac pkg",
     "build:win": "npm run build && electron-builder --win",
     "build:linux": "npm run build && electron-builder --linux"
   },
