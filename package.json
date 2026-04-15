@@ -1,8 +1,8 @@
 {
-  "name": "astrology-chat",
+  "name": "astro-ai",
   "version": "1.0.0",
   "description": "Astrology AI chat assistant",
-  "productName": "Astrology Chat",
+  "productName": "AstroAI",
   "main": "./out/main/index.js",
   "author": "serslon",
   "homepage": "https://electron-vite.org",

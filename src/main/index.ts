@@ -18,7 +18,7 @@ function showAboutWindow(): void {
     minimizable: false,
     maximizable: false,
     fullscreenable: false,
-    title: 'About Astrology Chat',
+    title: 'About AstroAI',
     backgroundColor: '#ffffff',
     webPreferences: { nodeIntegration: false, contextIsolation: true },
   })
@@ -49,7 +49,7 @@ function showAboutWindow(): void {
 </head>
 <body>
   <img src="data:image/png;base64,${iconBase64}" alt="icon"/>
-  <h1>Astrology Chat</h1>
+  <h1>AstroAI</h1>
   <p class="version">Version ${app.getVersion()}</p>
   <p class="credits">Powered by AI &amp; Astrology API</p>
   <p class="copyright">© 2025 SerSlon. All rights reserved.</p>
@@ -68,7 +68,7 @@ function createWindow(): void {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    title: 'Astrology Chat',
+    title: 'AstroAI',
     backgroundColor: '#111111',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
@@ -100,7 +100,7 @@ function createWindow(): void {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.serslon.astrology-chat')
+  electronApp.setAppUserModelId('com.serslon.astro-ai')
 
   // Set dock icon and custom app menu on macOS
   if (process.platform === 'darwin') {

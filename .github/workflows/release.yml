@@ -98,9 +98,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Astrology Chat ${{ github.ref_name }}
+          name: AstroAI ${{ github.ref_name }}
           body: |
-            ## Astrology Chat ${{ github.ref_name }}
+            ## AstroAI ${{ github.ref_name }}
 
             ### Installation
 
@@ -111,7 +111,7 @@ jobs:
             | Linux | `.AppImage`, `.deb`, `.snap` |
 
             **macOS first launch:** Right-click → Open, then click Open in the dialog.
-            Or run: `xattr -dr com.apple.quarantine "/Applications/Astrology Chat.app"`
+            Or run: `xattr -dr com.apple.quarantine "/Applications/AstroAI.app"`
 
             ### API Keys required
             Configure in Settings after launch. Get keys at:

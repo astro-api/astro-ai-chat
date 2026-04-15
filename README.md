@@ -1,4 +1,4 @@
-# Astrology Chat
+# AstroAI
 
 A desktop AI chat app for astrology, numerology, tarot, Human Design, and related esoteric systems. Powered by large language models via multiple providers and the [Astrology API](https://astrology-api.io).
 
@@ -80,7 +80,7 @@ After the first launch, macOS will remember the exception and the app will open 
 
 Alternatively, remove the quarantine attribute after installation:
 ```bash
-xattr -dr com.apple.quarantine "/Applications/Astrology Chat.app"
+xattr -dr com.apple.quarantine "/Applications/AstroAI.app"
 ```
 
 ### Windows

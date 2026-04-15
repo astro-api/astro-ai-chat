@@ -1,5 +1,5 @@
-appId: com.serslon.astrology-chat
-productName: Astrology Chat
+appId: com.serslon.astro-ai
+productName: AstroAI
 icon: resources/icon
 directories:
   buildResources: build
@@ -16,7 +16,7 @@ extraResources:
 asarUnpack:
   - resources/**
 win:
-  executableName: chat-astrology
+  executableName: astro-ai
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
