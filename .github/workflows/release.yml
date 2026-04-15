@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build macOS (universal DMG)
+        run: npm run build:mac:dmg
+
+      - name: Ad-hoc sign
+        run: |
+          APP=$(find dist/mac-universal -name "*.app" | head -1)
+          if [ -n "$APP" ]; then
+            codesign --deep --force --sign - "$APP"
+          fi
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-dmg
+          path: dist/*.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Windows
+        run: npm run build:win
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-installer
+          path: dist/*.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Linux
+        run: npm run build:linux
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-packages
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.snap
+
+  release:
+    needs: [build-mac, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Astrology Chat ${{ github.ref_name }}
+          body: |
+            ## Astrology Chat ${{ github.ref_name }}
+
+            ### Installation
+
+            | Platform | File |
+            |---|---|
+            | macOS (Intel + Apple Silicon) | `.dmg` |
+            | Windows | `.exe` (NSIS installer) |
+            | Linux | `.AppImage`, `.deb`, `.snap` |
+
+            **macOS first launch:** Right-click → Open, then click Open in the dialog.
+            Or run: `xattr -dr com.apple.quarantine "/Applications/Astrology Chat.app"`
+
+            ### API Keys required
+            Configure in Settings after launch. Get keys at:
+            - [OpenRouter](https://openrouter.ai/keys) (recommended)
+            - [Astrology API](https://astrology-api.io)
+          files: artifacts/**/*
+          fail_on_unmatched_files: false
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}
