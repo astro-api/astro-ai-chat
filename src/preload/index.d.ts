@@ -39,6 +39,7 @@ type ElectronAPIType = {
   setSettings: (updates: Record<string, string>) => Promise<{ success: boolean }>
   listModels: (provider: string) => Promise<{ models: string[] }>
   setTitle: (title: string) => Promise<void>
+  openExternal: (url: string) => Promise<void>
 }
 
 declare global {

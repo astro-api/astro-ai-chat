@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, ChevronDown, Search, RefreshCw, Globe } from 'lucide-react'
+import { X, ChevronDown, Search, RefreshCw, Globe, ExternalLink } from 'lucide-react'
 import { useTr } from '../i18n/LanguageContext'
 import { LANGUAGES, Language } from '../i18n/translations'
 
@@ -8,11 +8,11 @@ interface SettingsProps {
 }
 
 const PROVIDERS = [
-  { id: 'openrouter', label: 'OpenRouter', keyName: 'OPENROUTER_API_KEY', placeholder: 'sk-or-...', defaultModel: 'anthropic/claude-sonnet-4-5' },
-  { id: 'anthropic',  label: 'Anthropic',  keyName: 'ANTHROPIC_API_KEY',  placeholder: 'sk-ant-...', defaultModel: 'claude-sonnet-4-6' },
-  { id: 'openai',     label: 'OpenAI',     keyName: 'OPENAI_API_KEY',     placeholder: 'sk-...', defaultModel: 'gpt-4o' },
-  { id: 'google',     label: 'Google',     keyName: 'GOOGLE_API_KEY',     placeholder: 'AIza...', defaultModel: 'gemini-2.0-flash' },
-  { id: 'mistral',    label: 'Mistral',    keyName: 'MISTRAL_API_KEY',    placeholder: '...', defaultModel: 'mistral-large-latest' },
+  { id: 'openrouter', label: 'OpenRouter', keyName: 'OPENROUTER_API_KEY', placeholder: 'sk-or-...', defaultModel: 'anthropic/claude-sonnet-4-5', url: 'https://openrouter.ai/keys' },
+  { id: 'anthropic',  label: 'Anthropic',  keyName: 'ANTHROPIC_API_KEY',  placeholder: 'sk-ant-...', defaultModel: 'claude-sonnet-4-6', url: 'https://console.anthropic.com/' },
+  { id: 'openai',     label: 'OpenAI',     keyName: 'OPENAI_API_KEY',     placeholder: 'sk-...', defaultModel: 'gpt-4o', url: 'https://platform.openai.com/api-keys' },
+  { id: 'google',     label: 'Google',     keyName: 'GOOGLE_API_KEY',     placeholder: 'AIza...', defaultModel: 'gemini-2.0-flash', url: 'https://aistudio.google.com/apikey' },
+  { id: 'mistral',    label: 'Mistral',    keyName: 'MISTRAL_API_KEY',    placeholder: '...', defaultModel: 'mistral-large-latest', url: 'https://console.mistral.ai/' },
 ]
 
 export function Settings({ onClose }: SettingsProps) {
@@ -185,7 +185,19 @@ export function Settings({ onClose }: SettingsProps) {
 
         {/* API Key */}
         <div>
-          <label style={labelStyle}>{currentProvider.label} {tr.apiKey}</label>
+          <div className="flex items-center justify-between mb-1">
+            <label style={labelStyle}>{currentProvider.label} {tr.apiKey}</label>
+            <button
+              onClick={() => window.electronAPI.openExternal(currentProvider.url)}
+              className="flex items-center gap-1 text-xs"
+              style={{ color: '#585B65', background: 'transparent', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#a5b4fc')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#585B65')}
+            >
+              <ExternalLink className="h-3 w-3" />
+              {tr.getApiKey}
+            </button>
+          </div>
           <input type="password"
             value={apiKeys[currentProvider.keyName] ?? ''}
             onChange={e => setApiKeys(prev => ({ ...prev, [currentProvider.keyName]: e.target.value }))}
@@ -258,7 +270,19 @@ export function Settings({ onClose }: SettingsProps) {
 
         {/* Astrology API Key */}
         <div>
-          <label style={labelStyle}>{tr.astrologyApiKey}</label>
+          <div className="flex items-center justify-between mb-1">
+            <label style={labelStyle}>{tr.astrologyApiKey}</label>
+            <button
+              onClick={() => window.electronAPI.openExternal('https://dashboard.astrology-api.io/')}
+              className="flex items-center gap-1 text-xs"
+              style={{ color: '#585B65', background: 'transparent', border: 'none', cursor: 'pointer' }}
+              onMouseEnter={e => (e.currentTarget.style.color = '#a5b4fc')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#585B65')}
+            >
+              <ExternalLink className="h-3 w-3" />
+              {tr.getApiKey}
+            </button>
+          </div>
           <input type="password" value={astrologyKey}
             onChange={e => setAstrologyKey(e.target.value)}
             placeholder="ask_..." style={inputStyle}
