@@ -73,6 +73,36 @@ The built app will be in `dist/`.
 
 **macOS installation:** Use the `.pkg` installer — it goes through the standard macOS Installer and launches without any extra steps. The `.dmg` is also available for drag & drop installation.
 
+---
+
+## Known Issues
+
+### macOS: "Astro AI Chat cannot be opened" (Gatekeeper)
+
+Because the app is not signed with an Apple Developer ID, macOS Gatekeeper will block it on first launch.
+
+**Fix (macOS 15 Sequoia and later):**
+
+> Note: The old Control+click workaround no longer works in macOS 15.
+
+1. Try to open the app — dismiss the warning dialog
+2. Open **System Settings → Privacy & Security**
+3. Scroll down to the **Security** section
+4. Click **Open Anyway** next to the Astro AI Chat message
+5. Enter your password and confirm
+
+**Alternative — via Terminal:**
+
+```bash
+# Allow the specific app (recommended)
+xattr -dr com.apple.quarantine "/Applications/Astro AI Chat.app"
+
+# Or temporarily allow all unsigned apps
+sudo spctl --master-disable
+# (re-enable after launching)
+sudo spctl --master-enable
+```
+
 ### Windows
 
 ```bash
@@ -106,13 +136,13 @@ This updates `package.json` and creates a git commit automatically.
 **2. Push the commit and tag**
 
 ```bash
-git push origin master --tags
+git push origin main --tags
 ```
 
 **3. Wait for CI**
 
 GitHub Actions will run three build jobs (~10 min) and publish a Release at:
-`https://github.com/<owner>/chat_astrology/releases`
+`https://github.com/serslon/astro-ai-chat/releases`
 
 ### Pre-releases
 
@@ -120,7 +150,7 @@ For beta versions, use a tag with a `-` suffix — the release will be marked as
 
 ```bash
 npm version prerelease --preid=beta   # → 1.0.1-beta.0
-git push origin master --tags
+git push origin main --tags
 ```
 
 ---
@@ -139,7 +169,7 @@ resources/
   icon.png       — App icon source (512×512)
   icon.icns      — macOS icon bundle
 scripts/
-  sign.sh        — Ad-hoc code signing for macOS builds
+  sign.cjs       — Ad-hoc code signing for macOS builds
   gen-icon.mjs   — Icon generator (Sharp)
 ```
 
