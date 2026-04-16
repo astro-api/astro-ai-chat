@@ -4,7 +4,7 @@
   "description": "Astrology AI chat assistant",
   "productName": "Astro AI Chat",
   "main": "./out/main/index.js",
-  "author": "serslon",
+  "author": "Procoders",
   "homepage": "https://electron-vite.org",
   "scripts": {
     "format": "prettier --write .",

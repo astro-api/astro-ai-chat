@@ -100,7 +100,7 @@ function createWindow(): void {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.serslon.astro-ai-chat')
+  electronApp.setAppUserModelId('com.procoders.astro-ai-chat')
 
   // Set dock icon and custom app menu on macOS
   if (process.platform === 'darwin') {
