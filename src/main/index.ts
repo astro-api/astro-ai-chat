@@ -52,7 +52,7 @@ function showAboutWindow(): void {
   <h1>Astro AI Chat</h1>
   <p class="version">Version ${app.getVersion()}</p>
   <p class="credits">Powered by AI &amp; Astrology API</p>
-  <p class="copyright">© 2025 SerSlon. All rights reserved.</p>
+  <p class="copyright">© 2026 Procoders. All rights reserved.</p>
 </body>
 </html>`
 
