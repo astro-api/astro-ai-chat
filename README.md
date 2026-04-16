@@ -142,7 +142,7 @@ git push origin main --tags
 **3. Wait for CI**
 
 GitHub Actions will run three build jobs (~10 min) and publish a Release at:
-`https://github.com/serslon/astro-ai-chat/releases`
+`https://github.com/astro-api/astro-ai-chat/releases`
 
 ### Pre-releases
 
