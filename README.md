@@ -1,4 +1,4 @@
-# AstroAI
+# Astro AI Chat
 
 A desktop AI chat app for astrology, numerology, tarot, Human Design, and related esoteric systems. Powered by large language models via multiple providers and the [Astrology API](https://astrology-api.io).
 

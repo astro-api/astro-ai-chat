@@ -122,9 +122,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: AstroAI ${{ github.ref_name }}
+          name: Astro AI Chat ${{ github.ref_name }}
           body: |
-            ## AstroAI ${{ github.ref_name }}
+            ## Astro AI Chat ${{ github.ref_name }}
 
             ### Installation
 
