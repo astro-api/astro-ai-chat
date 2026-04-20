@@ -8,6 +8,13 @@
       "when": 1776169679601,
       "tag": "0000_daily_speedball",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1776692839029,
+      "tag": "0001_high_longshot",
+      "breakpoints": true
     }
   ]
 }

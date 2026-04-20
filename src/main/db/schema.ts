@@ -3,6 +3,8 @@ import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 export const chats = sqliteTable('chats', {
   id: text('id').primaryKey(),
   title: text('title').notNull(),
+  summary: text('summary'),
+  summarizedUpToMessageId: text('summarized_up_to_message_id'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 })
