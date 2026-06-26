@@ -119,29 +119,10 @@ jobs:
         with:
           path: artifacts
 
-      - name: Create GitHub Release
+      - name: Attach installers to release
         uses: softprops/action-gh-release@v2
         with:
-          name: Astro AI Chat ${{ github.ref_name }}
-          body: |
-            ## Astro AI Chat ${{ github.ref_name }}
-
-            ### Installation
-
-            | Platform | File |
-            |---|---|
-            | macOS (Intel + Apple Silicon) | `.pkg` — recommended, installs without extra steps |
-            | macOS alternative | `.dmg` — drag & drop |
-            | Windows | `.exe` (NSIS installer) |
-            | Linux | `.AppImage`, `.deb` |
-
-            **macOS:** Use the `.pkg` installer — no Terminal required.
-
-            ### API Keys required
-            Configure in Settings after launch. Get keys at:
-            - [OpenRouter](https://openrouter.ai/keys) (recommended)
-            - [Astrology API](https://dashboard.astrology-api.io)
           files: artifacts/**/*
           fail_on_unmatched_files: false
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
