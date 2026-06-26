@@ -1,68 +1,68 @@
-# Design: Автоматический CHANGELOG через release-please
+# Design: Automated CHANGELOG via release-please
 
-**Дата:** 2026-06-26
-**Статус:** одобрено к реализации
+**Date:** 2026-06-26
+**Status:** approved for implementation
 
-## Проблема
+## Problem
 
-Сейчас в проекте нет автоматического чанжлога:
+The project currently has no automated changelog:
 
-- Файл `CHANGELOG.md` отсутствует.
-- Версия в `package.json` бампается вручную коммитом вида `1.0.1`.
-- Тег `vX.Y.Z` ставится вручную; его push триггерит `.github/workflows/release.yml`.
-- Тело GitHub Release — **статичный хардкод-шаблон** в `release.yml` (таблица установки + ссылки на API-ключи), одинаковый для каждого релиза. Список изменений между версиями нигде не показывается.
+- There is no `CHANGELOG.md` file.
+- The `package.json` version is bumped manually with a commit like `1.0.1`.
+- The `vX.Y.Z` tag is created manually; pushing it triggers `.github/workflows/release.yml`.
+- The GitHub Release body is a **hardcoded static template** in `release.yml` (install table + API-key links), identical for every release. The list of changes between versions is never shown.
 
-Коммиты уже пишутся в формате conventional commits (`feat:`, `fix:`, `docs:`, …), но эта информация никак не агрегируется.
+Commits are already written as conventional commits (`feat:`, `fix:`, `docs:`, …), but that information is never aggregated.
 
-## Цель
+## Goal
 
-Внедрить **release-please** (`googleapis/release-please-action@v4`), который:
+Adopt **release-please** (`googleapis/release-please-action@v4`), which:
 
-- агрегирует conventional commits и ведёт `CHANGELOG.md` в репозитории;
-- автоматически бампает версию в `package.json`;
-- создаёт GitHub Release с телом из CHANGELOG и тег `vX.Y.Z`.
+- aggregates conventional commits and maintains `CHANGELOG.md` in the repository;
+- automatically bumps the version in `package.json`;
+- creates a GitHub Release with a body sourced from CHANGELOG, plus a `vX.Y.Z` tag.
 
-Существующий `release.yml` остаётся «сборщиком артефактов»: срабатывает на готовый тег и **дописывает** установочные файлы к уже созданному релизу.
+The existing `release.yml` remains the "artifact builder": it triggers on the ready tag and **appends** installer files to the already-created release.
 
-## Архитектура и поток
+## Architecture and flow
 
 ```
-PR с conventional commits → merge в main
+PR with conventional commits → merge into main
         │
         ▼
-[release-please.yml]  ← новый workflow, on: push to main
-        │  агрегирует feat/fix/... с прошлого релиза
-        │  открывает/обновляет "release PR" (бамп version в package.json + CHANGELOG.md)
+[release-please.yml]  ← new workflow, on: push to main
+        │  aggregates feat/fix/... since the last release
+        │  opens/updates a "release PR" (bumps version in package.json + CHANGELOG.md)
         ▼
-   merge release-PR
-        │  release-please создаёт GitHub Release + тег vX.Y.Z, пишет тело из CHANGELOG
+   merge the release PR
+        │  release-please creates a GitHub Release + tag vX.Y.Z, writes the body from CHANGELOG
         ▼
-[release.yml]  ← существующий, on: push tag 'v*' — логику сборки НЕ трогаем
-        │  собирает .pkg/.dmg/.exe/.AppImage/.deb
+[release.yml]  ← existing, on: push tag 'v*' — build logic is NOT touched
+        │  builds .pkg/.dmg/.exe/.AppImage/.deb
         ▼
-   дописывает артефакты к уже созданному релизу (тому же тегу)
+   appends artifacts to the already-created release (same tag)
 ```
 
-Ключевая идея: **release-please владеет версией, CHANGELOG.md, релизом и тегом.** `release.yml` владеет только сборкой и аттачем артефактов. Ручной бамп `package.json` и ручная простановка тегов больше не нужны.
+Key idea: **release-please owns the version, CHANGELOG.md, the release, and the tag.** `release.yml` owns only the build and artifact attachment. Manual `package.json` bumps and manual tagging are no longer needed.
 
-## Компоненты
+## Components
 
-| Файл | Действие | Назначение |
+| File | Action | Purpose |
 |---|---|---|
-| `.github/workflows/release-please.yml` | создать | `on: push: branches: [main]`. Запускает `googleapis/release-please-action@v4`. Владеет версией, CHANGELOG.md, релизом и тегом. |
-| `release-please-config.json` | создать | `release-type: node`, секции CHANGELOG, `include-v-in-tag: true` → тег `vX.Y.Z`. |
-| `.release-please-manifest.json` | создать | `{ ".": "1.0.1" }` — фиксирует текущую версию как стартовую, чтобы следующий релиз был `1.0.2`/`1.1.0`. |
-| `.github/workflows/release.yml` | изменить | Только job `release`: `action-gh-release` переводим в режим «дописать артефакты к существующему релизу». Build-джобы (mac/win/linux) — без изменений. |
-| `CLAUDE.md` | изменить | Короткая заметка про новый релизный флоу. |
+| `.github/workflows/release-please.yml` | create | `on: push: branches: [main]`. Runs `googleapis/release-please-action@v4`. Owns the version, CHANGELOG.md, the release, and the tag. |
+| `release-please-config.json` | create | `release-type: node`, CHANGELOG sections, `include-v-in-tag: true` → tag `vX.Y.Z`. |
+| `.release-please-manifest.json` | create | `{ ".": "1.0.1" }` — pins the current version as the starting point so the next release is `1.0.2`/`1.1.0`. |
+| `.github/workflows/release.yml` | modify | Only the `release` job: switch `action-gh-release` to "append artifacts to the existing release" mode. Build jobs (mac/win/linux) — unchanged. |
+| `CLAUDE.md` | modify | Short note about the new release flow. |
 
-`CHANGELOG.md` вручную **не создаём** — его создаст и будет вести release-please в первом release-PR.
+`CHANGELOG.md` is **not** created manually — release-please creates and maintains it in the first release PR.
 
 ### release-please-config.json
 
-- `release-type: node` — читает и пишет `version` в `package.json`.
-- `include-v-in-tag: true` — формат тега `vX.Y.Z` (совместимо с триггером `release.yml` `on: push: tags: ['v*']`).
-- Секции changelog (видимые): `feat` → Features, `fix` → Bug Fixes, `perf` → Performance, `refactor` → Refactors, `docs` → Documentation, `chore` → Miscellaneous. (`docs`/`chore`/`refactor`/`perf` включаем как отдельные секции — полезно для desktop-проекта.)
-- Тело GitHub Release = **чистый changelog**. Никакой пост-обработки/footer. Инструкция по установке остаётся в README.
+- `release-type: node` — reads and writes `version` in `package.json`.
+- `include-v-in-tag: true` — tag format `vX.Y.Z` (compatible with the `release.yml` trigger `on: push: tags: ['v*']`).
+- Changelog sections (visible): `feat` → Features, `fix` → Bug Fixes, `perf` → Performance, `refactor` → Refactors, `docs` → Documentation, `chore` → Miscellaneous. (`docs`/`chore`/`refactor`/`perf` are included as separate sections — useful for a desktop project.)
+- GitHub Release body = **plain changelog**. No post-processing/footer. Install instructions stay in the README.
 
 ### .github/workflows/release-please.yml
 
@@ -85,9 +85,9 @@ jobs:
           manifest-file: .release-please-manifest.json
 ```
 
-### Изменение release.yml (job `release`)
+### release.yml change (job `release`)
 
-Текущий шаг создаёт релиз со статичным телом. Переводим в режим аттача к уже существующему релизу:
+The current step creates the release with a static body. Switch it to attach to the already-existing release:
 
 ```yaml
 - name: Attach installers to release
@@ -95,30 +95,30 @@ jobs:
   with:
     files: artifacts/**/*
     fail_on_unmatched_files: false
-    # name/body/draft/prerelease УБИРАЕМ — релиз и его тело уже созданы release-please из CHANGELOG
+    # name/body/draft/prerelease REMOVED — the release and its body are already created by release-please from CHANGELOG
   env:
     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-Убираем: `name:`, весь блок `body:` (таблица установки/API-ключей), `draft:`, `prerelease:`. `softprops/action-gh-release@v2` матчит существующий релиз по тегу и дописывает `files`, не трогая тело, если `body` не передан. Build-джобы (`build-mac`, `build-windows`, `build-linux`) не меняются.
+Remove: `name:`, the entire `body:` block (install/API-keys table), `draft:`, `prerelease:`. `softprops/action-gh-release@v2` matches the existing release by tag and appends `files` without touching the body when no `body` is passed. The build jobs (`build-mac`, `build-windows`, `build-linux`) are unchanged.
 
-## Риски и edge-cases
+## Risks and edge cases
 
-1. **Default branch.** Конфиги и worktree сейчас на ветке `claude/...`, release-please слушает `main`. Изменения должны попасть в `main` (через PR), иначе ничего не сработает.
-2. **Стартовая версия.** `.release-please-manifest.json` = `1.0.1`. Первый merged release-PR даст `1.0.2` (только fix) или `1.1.0` (есть feat). Прошлые коммиты release-please задним числом **не** пересчитывает — changelog начнётся с изменений после внедрения. Ожидаемо.
-3. **Гонка двух workflow.** release-please создаёт релиз+тег → push тега триггерит `release.yml` → артефакты дописываются к уже существующему релизу. `action-gh-release` без `body` не перезатирает notes (матч по тегу, мердж files).
-4. **prerelease.** Логика `prerelease: contains(ref_name, '-')` уходит. release-please сам помечает пререлизы по версии (`1.0.0-rc.1`). Для текущего проекта приемлемо — пререлизов нет.
-5. **Права токена (предусловие репозитория).** Нужны `contents: write` + `pull-requests: write`. В Settings → Actions → General репозитория должна быть включена опция «Allow GitHub Actions to create and approve pull requests», иначе release-please не сможет открыть release-PR. Это настройка репо, не код.
+1. **Default branch.** Config files and the worktree are currently on a `claude/...` branch, while release-please listens on `main`. The changes must land on `main` (via PR), otherwise nothing triggers.
+2. **Starting version.** `.release-please-manifest.json` = `1.0.1`. The first merged release PR yields `1.0.2` (fix only) or `1.1.0` (a feat is present). release-please does **not** retroactively recompute past commits — the changelog starts from changes made after adoption. Expected.
+3. **Two-workflow race.** release-please creates the release + tag → the tag push triggers `release.yml` → artifacts are appended to the already-existing release. `action-gh-release` without `body` does not overwrite the notes (matches by tag, merges files).
+4. **prerelease.** The `prerelease: contains(ref_name, '-')` logic goes away. release-please marks prereleases by version (`1.0.0-rc.1`) itself. Acceptable for this project — there are no prereleases.
+5. **Token permissions (repository precondition).** Requires `contents: write` + `pull-requests: write`. In repo Settings → Actions → General, "Allow GitHub Actions to create and approve pull requests" must be enabled, otherwise release-please cannot open the release PR. This is a repo setting, not code.
 
-## Тестирование
+## Testing
 
-- YAML-линт обоих workflow.
-- Валидация JSON-схемы `release-please-config.json` и `.release-please-manifest.json` (корректный `release-type`, наличие записи `"."`).
-- Diff `release.yml` затрагивает только job `release` — build-джобы без изменений.
-- Реальная проверка флоу — только после merge в `main`: должен создаться release-PR. Ручной шаг для владельца репозитория.
+- YAML lint both workflows.
+- Validate the JSON shape of `release-please-config.json` and `.release-please-manifest.json` (correct `release-type`, the `"."` entry is present).
+- The `release.yml` diff touches only the `release` job — build jobs unchanged.
+- Real flow verification — only after merging into `main`: a release PR should be created. Manual step for the repo owner.
 
-## Вне scope
+## Out of scope
 
-- Перенос инструкции по установке из README в тело релиза (решено: остаётся в README).
-- Подписанные/нотаризованные сборки.
-- Монорепо/несколько пакетов (проект — один пакет).
+- Moving install instructions from README into the release body (decided: they stay in the README).
+- Signed/notarized builds.
+- Monorepo/multiple packages (the project is a single package).
