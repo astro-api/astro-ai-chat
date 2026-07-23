@@ -77,3 +77,14 @@ UI component library: shadcn/ui (New York style, Slate base color) with Radix UI
 - `out/renderer/` — renderer static assets
 
 `electron-builder` then packages `out/` into a distributable.
+
+### Release flow
+
+Releases are automated via **release-please** (`.github/workflows/release-please.yml`):
+
+1. Merge conventional-commit PRs (`feat:`, `fix:`, …) into `main`.
+2. release-please opens/updates a **release PR** that bumps `package.json` and maintains `CHANGELOG.md`. Config lives in `release-please-config.json` + `.release-please-manifest.json`.
+3. Merging the release PR creates a GitHub Release (body = changelog) and a `vX.Y.Z` tag.
+4. The tag triggers `.github/workflows/release.yml`, which builds installers and **attaches** them to that release.
+
+Do **not** bump the version or create tags by hand — release-please owns both. Repo setting: Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests" must be enabled.
